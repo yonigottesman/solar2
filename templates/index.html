@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>solar2</title>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css"
+        integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
+        crossorigin="anonymous"></script>
+</head>
+
+<body>
+
+    <div class="container text-center ">
+        <p style="font-size:3vw;">Distance from Tel Aviv to {{body}}</p>
+        <h1 id="delta" style="font-size:5vw;"></h1>
+    </div>
+
+</body>
+
+<script>
+    function numberWithCommas(x) {
+        // This magic was taken from here:
+        // https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
+        // TODO: understand it :/
+        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    var distance_now = {{ au_now }}
+    var distance_hour = {{ au_in_an_hour }}
+    var first = 1
+    var passed_seconds = 0
+    var minutes_on_page = 0
+    window.setInterval(function () {
+        passed_seconds = passed_seconds + 1
+        var now_sec = new Date().getUTCSeconds()
+        if (first == 1 || now_sec < 2) {
+            first = 0
+
+            km_sec = (distance_hour - distance_now) / 60 / 60
+
+            minutes_on_page = minutes_on_page + 1
+            if (minutes_on_page >= 50) { // reload every 50 minutes
+                location.reload(true)
+            }
+        }
+        var dist = (distance_now + passed_seconds * km_sec).toFixed(2)
+        $('#delta').text(numberWithCommas(dist) + "[km]")
+
+    }, 1000);
+
+
+
+
+</script>
+
+</html>
