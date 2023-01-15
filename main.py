@@ -1,3 +1,4 @@
+import random
 from datetime import datetime, timedelta
 
 import aiohttp
@@ -26,24 +27,40 @@ headers = {
     "Sec-Fetch-Site": "same-origin",
 }
 
-data = "-----------------------------123289955733948873062906819236\r\nContent-Disposition: form-data; name=\"www\"\r\n\r\n1\r\n-----------------------------123289955733948873062906819236\r\nContent-Disposition: form-data; name=\"format\"\r\n\r\njson\r\n-----------------------------123289955733948873062906819236\r\nContent-Disposition: form-data; name=\"input\"\r\n\r\n!$$SOF\r\nMAKE_EPHEM=YES\r\nCOMMAND=499\r\nEPHEM_TYPE=OBSERVER\r\nCENTER='coord@399'\r\nCOORD_TYPE=GEODETIC\r\nSITE_COORD='+34.88300,+32.01700,0'\r\nSTART_TIME='${start_time}'\r\nSTOP_TIME='${stop_time}'\r\nSTEP_SIZE='1 MINUTES'\r\nQUANTITIES='20'\r\nREF_SYSTEM='ICRF'\r\nCAL_FORMAT='CAL'\r\nTIME_DIGITS='MINUTES'\r\nANG_FORMAT='HMS'\r\nAPPARENT='AIRLESS'\r\nRANGE_UNITS='AU'\r\nSUPPRESS_RANGE_RATE='NO'\r\nSKIP_DAYLT='NO'\r\nSOLAR_ELONG='0,180'\r\nEXTRA_PREC='NO'\r\nR_T_S_ONLY='NO'\r\nCSV_FORMAT='NO'\r\nOBJ_DATA='YES'\r\n\r\n-----------------------------123289955733948873062906819236--\r\n"
+data = "-----------------------------123289955733948873062906819236\r\nContent-Disposition: form-data; name=\"www\"\r\n\r\n1\r\n-----------------------------123289955733948873062906819236\r\nContent-Disposition: form-data; name=\"format\"\r\n\r\njson\r\n-----------------------------123289955733948873062906819236\r\nContent-Disposition: form-data; name=\"input\"\r\n\r\n!$$SOF\r\nMAKE_EPHEM=YES\r\nCOMMAND=${object_id}\r\nEPHEM_TYPE=OBSERVER\r\nCENTER='coord@399'\r\nCOORD_TYPE=GEODETIC\r\nSITE_COORD='+34.88300,+32.01700,0'\r\nSTART_TIME='${start_time}'\r\nSTOP_TIME='${stop_time}'\r\nSTEP_SIZE='1 MINUTES'\r\nQUANTITIES='20'\r\nREF_SYSTEM='ICRF'\r\nCAL_FORMAT='CAL'\r\nTIME_DIGITS='MINUTES'\r\nANG_FORMAT='HMS'\r\nAPPARENT='AIRLESS'\r\nRANGE_UNITS='AU'\r\nSUPPRESS_RANGE_RATE='NO'\r\nSKIP_DAYLT='NO'\r\nSOLAR_ELONG='0,180'\r\nEXTRA_PREC='NO'\r\nR_T_S_ONLY='NO'\r\nCSV_FORMAT='NO'\r\nOBJ_DATA='YES'\r\n\r\n-----------------------------123289955733948873062906819236--\r\n"
 
 
-async def query_nasa(start_time, stop_time):
+async def query_nasa(start_time, stop_time, object_id):
     resolved_data = data.replace("${start_time}", start_time)
     resolved_data = resolved_data.replace("${stop_time}", stop_time)
+    resolved_data = resolved_data.replace("${object_id}", object_id)
     async with aiohttp.ClientSession() as session:
         nasa_url = "https://ssd.jpl.nasa.gov/api/horizons_file.api"
         async with session.post(nasa_url, headers=headers, data=resolved_data) as resp:
             return (await resp.json())["result"]
 
 
+bodies = [
+    ("499", "Mars"),
+    ("599", "Jupiter"),
+    ("10", "Sol"),
+    ("199", "Mercury"),
+    ("299", "Venus"),
+    ("699", "Saturn"),
+    ("799", "Uranus"),
+    ("899", "Neptune"),
+    ("301", "Luna"),
+]
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
+    i = random.randint(0, len(bodies) - 1)
+    body_id, body_name = bodies[i]
     utcnow = datetime.utcnow()
     today = datetime.strftime(utcnow, "%Y-%m-%d")
     intwodays = datetime.strftime(utcnow + timedelta(days=2), "%Y-%m-%d")
-    response = await query_nasa(today, intwodays)
+    response = await query_nasa(today, intwodays, body_id)
 
     current_minute = datetime.strftime(utcnow, "%H:%M")
 
@@ -60,7 +77,8 @@ async def index(request: Request):
     km_in_an_hour = 149597870.691 * au_in_an_hour
 
     return templates.TemplateResponse(
-        "index.html", {"request": request, "body": "Mars", "au_now": km_now, "au_in_an_hour": km_in_an_hour}
+        "index.html",
+        {"request": request, "body": "Mars", "au_now": km_now, "au_in_an_hour": km_in_an_hour, "body": body_name},
     )
 
 
